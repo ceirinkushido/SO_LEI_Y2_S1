@@ -58,7 +58,6 @@ int *randomizePath(int _numShuffles, int _pathIterationSize, int *_pathPointer)
         while(_random1 == _random2)
         {
             _random1 = rand() % _pathIterationSize;
-            _random2 = rand() % _pathIterationSize;
         }
         
         _aux1 = _pathPointer[_random1];
@@ -158,7 +157,7 @@ void freeMemory(int _size, int **_fileMatrix)
 }
 
 //Create all processes
-int *createWorkers(int _num_workers, int _size, sem_t writeMutex, double* shmem, int* shmemPath, int **_fileMatrix)
+int *createWorkers(int _num_workers, int _size, sem_t writeMutex, double* shmem, int* shmemPath, int **_fileMatrix, int _numShuffles)
 {
     int *_workersPid = malloc(_num_workers * sizeof(int));
     int i, _bestDist = 0;
@@ -186,7 +185,7 @@ int *createWorkers(int _num_workers, int _size, sem_t writeMutex, double* shmem,
                     //printf("\b]\n");
                 }
                 _bestDist = calculateDistance(_realPath, _size, _bestDist, iterationCounter, writeMutex, shmem, shmemPath, _fileMatrix);
-                _realPath = randomizePath(1, _size, _realPath);
+                _realPath = randomizePath(_numShuffles, _size, _realPath);
                 iterationCounter++;
             }
         }
@@ -235,13 +234,22 @@ int main(int argc, char* argv[])
     //Initiate Timers and Random
     gettimeofday(&_tBegin, NULL);
 
-    int i, j;
+    int i, j, _numShuffles;
     int **_fileMatrix;
     int protection = PROT_READ | PROT_WRITE;
     int visibility = MAP_ANONYMOUS | MAP_SHARED;
     int _size;
 
-    if(atoi(argv[4]) > 1)
+    if(argc > 5)
+    {
+        _numShuffles = atoi(argv[5]) > 1;
+    }
+    else
+    {
+        _numShuffles = 1;
+    }
+
+    if(argc > 4  && atoi(argv[4]) > 1)
     {
         int _numberOfTests;
         double m_iterations = 0, m_time = 0;
@@ -249,7 +257,6 @@ int main(int argc, char* argv[])
         for(_numberOfTests=0; _numberOfTests < atoi(argv[4]); _numberOfTests++)
         {
             _fileMatrix = readFile(argv[1], _fileMatrix, &_size);
-            
             int _num_workers = atoi(argv[2]);
 
             // -1 is POSIX standard to run the shmem in memory instead of file
@@ -264,7 +271,7 @@ int main(int argc, char* argv[])
 
             if(_num_workers > 0)
             {
-                int *_workerPids = createWorkers(_num_workers, _size, writeMutex, shmem, shmemPath, _fileMatrix);
+                int *_workerPids = createWorkers(_num_workers, _size, writeMutex, shmem, shmemPath, _fileMatrix, _numShuffles);
 
                 //sleep(atoi(argv[3]));
                 long _tEnd = _tBegin.tv_sec+atoi(argv[3]);
@@ -291,7 +298,6 @@ int main(int argc, char* argv[])
                 m_iterations += shmem[3];
                 m_time += shmem[4];
             }
-
             freeMemory(_size, _fileMatrix);
             gettimeofday(&_tBegin, NULL);
             _NewPath = 0;
@@ -300,10 +306,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-
-        
         _fileMatrix = readFile(argv[1], _fileMatrix, &_size);
-       
         int _num_workers = atoi(argv[2]);
 
         // -1 is POSIX standard to run the shmem in memory instead of file
@@ -318,7 +321,7 @@ int main(int argc, char* argv[])
 
         if(_num_workers > 0)
         {
-            int *_workerPids = createWorkers(_num_workers, _size, writeMutex, shmem, shmemPath, _fileMatrix);
+            int *_workerPids = createWorkers(_num_workers, _size, writeMutex, shmem, shmemPath, _fileMatrix, _numShuffles);
 
             long _tEnd = _tBegin.tv_sec+atoi(argv[3]);
             while(_tNow.tv_sec < _tEnd){
