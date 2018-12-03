@@ -266,28 +266,28 @@ int main(int argc, char* argv[])
             // m OR number of workers
             shmem[0] = atoi(argv[2]);
 
-            //tempo_t OR total time
-            shmem[1] = atoi(argv[3]);
 
             if(_num_workers > 0)
             {
                 int *_workerPids = createWorkers(_num_workers, _size, writeMutex, shmem, shmemPath, _fileMatrix, _numShuffles);
 
-                //sleep(atoi(argv[3]));
                 long _tEnd = _tBegin.tv_sec+atoi(argv[3]);
                 while(_tNow.tv_sec < _tEnd){
                     gettimeofday(&_tNow, NULL);
                     //printf("[%lu][%lu]\n", _tNow.tv_sec, _tEnd);
                 }
-                //sleep(atoi(argv[3]));
-
 
                 killWorkers(_workerPids, _num_workers);
                 free(_workerPids);
                 sem_destroy(&writeMutex);
 
-                printf("\nind=[%d]  | n=[%d] | teste=[%s] | m=[%.0f] | tempo_t=[%.0f] | comp_res=[%.0f] | niter_res=[%.0f] | tempo_res = [%f]",
-                (_numberOfTests+1),       _size,    argv[1],    shmem[0],     shmem[1],       shmem[2],          shmem[3],         shmem[4]);
+                //tempo_t OR total time
+                gettimeofday(&_tNow, NULL);
+                double _tRun = ( _tNow.tv_sec - _tBegin.tv_sec);
+                _tRun += (_tNow.tv_usec / 1000.0)/1000;
+
+                printf("\nind=[%d]  | n=[%d] | teste=[%s] | m=[%.0f] | tempo_t=[%f] | comp_res=[%.0f] | niter_res=[%.0f] | tempo_res = [%f]",
+                (_numberOfTests+1),   _size,    argv[1],    shmem[0],     _tRun,       shmem[2],          shmem[3],         shmem[4]);
                 printf(" | resultado = [");
                 for(i=0 ; i<_size ; i++ )
                 {
@@ -316,9 +316,6 @@ int main(int argc, char* argv[])
         // m OR number of workers
         shmem[0] = atoi(argv[2]);
 
-        //tempo_t OR total time
-        shmem[1] = atoi(argv[3]);
-
         if(_num_workers > 0)
         {
             int *_workerPids = createWorkers(_num_workers, _size, writeMutex, shmem, shmemPath, _fileMatrix, _numShuffles);
@@ -333,16 +330,19 @@ int main(int argc, char* argv[])
             free(_workerPids);
             sem_destroy(&writeMutex);
 
-            printf("\nind=[1]  | n=[%d] | teste=[%s] | m=[%.0f] | tempo_t=[%.0f] | comp_res=[%.0f] | niter_res=[%.0f] | tempo_res = [%f]",
-            _size, argv[1], shmem[0], shmem[1], shmem[2], shmem[3], shmem[4]);
+            //tempo_t OR total time
+            gettimeofday(&_tNow, NULL);
+            double _tRun = ( _tNow.tv_sec - _tBegin.tv_sec);
+            _tRun += (_tNow.tv_usec / 1000.0)/1000;
+
+            printf("\nind=[1]  | n=[%d] | teste=[%s] | m=[%.0f] | tempo_t=[%f] | comp_res=[%.0f] | niter_res=[%.0f] | tempo_res = [%f]",
+            _size, argv[1], shmem[0], _tRun, shmem[2], shmem[3], shmem[4]);
             printf(" | resultado = [");
             for(i=0 ; i<_size ; i++ )
             {
                 printf("%d,",shmemPath[i]);
             }
             printf("\b] | WORKER_PID[%.0f]\n", shmem[7]);
-            
-
         }
         freeMemory(_size, _fileMatrix);
     }
